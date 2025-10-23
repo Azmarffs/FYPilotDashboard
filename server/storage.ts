@@ -15,6 +15,36 @@ export class MemStorage implements IStorage {
 
   constructor() {
     this.users = new Map();
+    this.seedUsers();
+  }
+
+  private seedUsers() {
+    const seedData: InsertUser[] = [
+      {
+        username: "student1",
+        password: "password123",
+        role: "student",
+        fullName: "John Doe",
+      },
+      {
+        username: "faculty1",
+        password: "password123",
+        role: "faculty",
+        fullName: "Dr. Sarah Ahmed",
+      },
+      {
+        username: "committee1",
+        password: "password123",
+        role: "committee",
+        fullName: "Prof. Muhammad Khan",
+      },
+    ];
+
+    seedData.forEach((userData) => {
+      const id = randomUUID();
+      const user: User = { ...userData, id };
+      this.users.set(id, user);
+    });
   }
 
   async getUser(id: string): Promise<User | undefined> {
