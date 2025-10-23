@@ -15,16 +15,26 @@ import MyProjects from "@/pages/student/MyProjects";
 import TeamFormation from "@/pages/student/TeamFormation";
 import ProgressTracking from "@/pages/student/ProgressTracking";
 import StudentNotifications from "@/pages/student/Notifications";
+import StudentProfile from "@/pages/student/Profile";
 
 import FacultyDashboard from "@/pages/FacultyDashboard";
 import SupervisorRequests from "@/pages/faculty/SupervisorRequests";
 import MySupervisedProjects from "@/pages/faculty/MySupervisedProjects";
 import Evaluations from "@/pages/faculty/Evaluations";
+import PanelAssignments from "@/pages/faculty/PanelAssignments";
+import Availability from "@/pages/faculty/Availability";
+import Communication from "@/pages/faculty/Communication";
+import FacultyProfile from "@/pages/faculty/FacultyProfile";
+import Reports from "@/pages/faculty/Reports";
 
 import CommitteeDashboard from "@/pages/CommitteeDashboard";
 import PanelGeneration from "@/pages/committee/PanelGeneration";
 import ProjectManagement from "@/pages/committee/ProjectManagement";
 import Analytics from "@/pages/committee/Analytics";
+import EvaluationManagement from "@/pages/committee/EvaluationManagement";
+import FacultyManagement from "@/pages/committee/FacultyManagement";
+import SystemSettings from "@/pages/committee/SystemSettings";
+import Communications from "@/pages/committee/Communications";
 
 import NotFound from "@/pages/not-found";
 import { useState } from "react";
@@ -42,6 +52,7 @@ function Router({ role }: { role: Role }) {
         <Route path="/team" component={TeamFormation} />
         <Route path="/progress" component={ProgressTracking} />
         <Route path="/notifications" component={StudentNotifications} />
+        <Route path="/profile" component={StudentProfile} />
         <Route component={NotFound} />
       </Switch>
     );
@@ -54,6 +65,11 @@ function Router({ role }: { role: Role }) {
         <Route path="/requests" component={SupervisorRequests} />
         <Route path="/supervised" component={MySupervisedProjects} />
         <Route path="/evaluations" component={Evaluations} />
+        <Route path="/panels" component={PanelAssignments} />
+        <Route path="/availability" component={Availability} />
+        <Route path="/communication" component={Communication} />
+        <Route path="/profile" component={FacultyProfile} />
+        <Route path="/reports" component={Reports} />
         <Route path="/notifications" component={StudentNotifications} />
         <Route component={NotFound} />
       </Switch>
@@ -66,6 +82,10 @@ function Router({ role }: { role: Role }) {
       <Route path="/panel-generation" component={PanelGeneration} />
       <Route path="/project-management" component={ProjectManagement} />
       <Route path="/analytics" component={Analytics} />
+      <Route path="/evaluation-management" component={EvaluationManagement} />
+      <Route path="/faculty" component={FacultyManagement} />
+      <Route path="/settings" component={SystemSettings} />
+      <Route path="/communications" component={Communications} />
       <Route component={NotFound} />
     </Switch>
   );

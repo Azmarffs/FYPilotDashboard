@@ -54,9 +54,11 @@ export function AppSidebar({ role }: AppSidebarProps) {
     { title: "My Supervised Projects", url: "/supervised", icon: ClipboardList },
     { title: "Evaluations", url: "/evaluations", icon: CheckSquare },
     { title: "Panel Assignments", url: "/panels", icon: PanelTop },
-    { title: "Schedule", url: "/schedule", icon: Calendar },
+    { title: "Availability", url: "/availability", icon: Calendar },
+    { title: "Communication", url: "/communication", icon: Mail },
+    { title: "Profile & Expertise", url: "/profile", icon: Settings },
+    { title: "Reports & Analytics", url: "/reports", icon: BarChart3 },
     { title: "Notifications", url: "/notifications", icon: Bell },
-    { title: "Profile", url: "/profile", icon: Settings },
   ];
 
   const committeeItems = [
