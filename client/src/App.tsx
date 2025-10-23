@@ -7,18 +7,65 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { RoleSelector } from "@/components/RoleSelector";
+
 import StudentDashboard from "@/pages/StudentDashboard";
+import SupervisorRecommendations from "@/pages/student/SupervisorRecommendations";
+import SubmitProject from "@/pages/student/SubmitProject";
+import MyProjects from "@/pages/student/MyProjects";
+import TeamFormation from "@/pages/student/TeamFormation";
+import ProgressTracking from "@/pages/student/ProgressTracking";
+import StudentNotifications from "@/pages/student/Notifications";
+
 import FacultyDashboard from "@/pages/FacultyDashboard";
+import SupervisorRequests from "@/pages/faculty/SupervisorRequests";
+import MySupervisedProjects from "@/pages/faculty/MySupervisedProjects";
+import Evaluations from "@/pages/faculty/Evaluations";
+
 import CommitteeDashboard from "@/pages/CommitteeDashboard";
+import PanelGeneration from "@/pages/committee/PanelGeneration";
+import ProjectManagement from "@/pages/committee/ProjectManagement";
+import Analytics from "@/pages/committee/Analytics";
+
 import NotFound from "@/pages/not-found";
 import { useState } from "react";
 
 type Role = "student" | "faculty" | "committee";
 
 function Router({ role }: { role: Role }) {
+  if (role === "student") {
+    return (
+      <Switch>
+        <Route path="/" component={StudentDashboard} />
+        <Route path="/recommendations" component={SupervisorRecommendations} />
+        <Route path="/submit" component={SubmitProject} />
+        <Route path="/projects" component={MyProjects} />
+        <Route path="/team" component={TeamFormation} />
+        <Route path="/progress" component={ProgressTracking} />
+        <Route path="/notifications" component={StudentNotifications} />
+        <Route component={NotFound} />
+      </Switch>
+    );
+  }
+
+  if (role === "faculty") {
+    return (
+      <Switch>
+        <Route path="/" component={FacultyDashboard} />
+        <Route path="/requests" component={SupervisorRequests} />
+        <Route path="/supervised" component={MySupervisedProjects} />
+        <Route path="/evaluations" component={Evaluations} />
+        <Route path="/notifications" component={StudentNotifications} />
+        <Route component={NotFound} />
+      </Switch>
+    );
+  }
+
   return (
     <Switch>
-      <Route path="/" component={role === "student" ? StudentDashboard : role === "faculty" ? FacultyDashboard : CommitteeDashboard} />
+      <Route path="/" component={CommitteeDashboard} />
+      <Route path="/panel-generation" component={PanelGeneration} />
+      <Route path="/project-management" component={ProjectManagement} />
+      <Route path="/analytics" component={Analytics} />
       <Route component={NotFound} />
     </Switch>
   );
