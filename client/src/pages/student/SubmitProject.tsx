@@ -3,31 +3,73 @@ import { DuplicateDetectionModal } from "@/components/modals/DuplicateDetectionM
 import { AcceptabilityScoreModal } from "@/components/modals/AcceptabilityScoreModal";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/lib/auth";
+import { useLocation } from "wouter";
 
 export default function SubmitProject() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const [showDuplicates, setShowDuplicates] = useState(false);
   const [showAcceptability, setShowAcceptability] = useState(false);
-  const [currentProject, setCurrentProject] = useState({ title: "", description: "" });
+  const [currentProject, setCurrentProject] = useState<any>({ title: "", description: "" });
+  const [projectData, setProjectData] = useState<any>(null);
 
-  const similarProjects = [
-    {
-      id: "1",
-      title: "Customer Service AI Assistant",
-      description: "An NLP-based chatbot system for automated customer support with sentiment analysis.",
-      similarity: 87,
-      submittedBy: "Ahmed Ali (22I-1234)",
-      status: "Approved",
+  const submitProjectMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("/api/projects", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      return response.json();
     },
-    {
-      id: "2",
-      title: "Intelligent Virtual Assistant for E-commerce",
-      description: "Building a conversational AI assistant using machine learning for online shopping support.",
-      similarity: 72,
-      submittedBy: "Sara Khan (22I-5678)",
-      status: "Under Review",
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      
+      if (data.duplicateCheckResult?.hasDuplicates) {
+        setCurrentProject({ title: data.title, description: data.description });
+        setShowDuplicates(true);
+      } else {
+        setShowAcceptability(true);
+      }
     },
-  ];
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit project",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCheckDuplicates = (title: string, description: string) => {
+    setCurrentProject({ title, description });
+    setShowDuplicates(true);
+  };
+
+  const handleSubmit = (data: any) => {
+    if (!user) return;
+    
+    const fullProjectData = {
+      ...data,
+      studentId: user.id,
+      status: "pending",
+    };
+    
+    setProjectData(fullProjectData);
+    submitProjectMutation.mutate(fullProjectData);
+  };
+
+  const handleFinalSubmit = () => {
+    setShowAcceptability(false);
+    toast({
+      title: "Project Submitted",
+      description: "Your project has been submitted for review",
+    });
+    setLocation("/projects");
+  };
 
   const acceptabilityFactors = [
     {
@@ -58,24 +100,6 @@ export default function SubmitProject() {
     "Consider using cloud resources instead of specialized hardware to reduce costs",
   ];
 
-  const handleCheckDuplicates = (title: string, description: string) => {
-    setCurrentProject({ title, description });
-    setShowDuplicates(true);
-  };
-
-  const handleSubmit = (data: any) => {
-    setCurrentProject({ title: data.title, description: data.description });
-    setShowAcceptability(true);
-  };
-
-  const handleFinalSubmit = () => {
-    setShowAcceptability(false);
-    toast({
-      title: "Project Submitted",
-      description: "Your project has been submitted for review",
-    });
-  };
-
   return (
     <div className="space-y-6">
       <div>
@@ -93,7 +117,7 @@ export default function SubmitProject() {
         open={showDuplicates}
         onClose={() => setShowDuplicates(false)}
         currentProject={currentProject}
-        similarProjects={similarProjects}
+        similarProjects={[]}
         onContinueAnyway={() => {
           setShowDuplicates(false);
           setShowAcceptability(true);
@@ -107,6 +131,7 @@ export default function SubmitProject() {
         score={82}
         factors={acceptabilityFactors}
         suggestions={suggestions}
+        onSubmit={handleFinalSubmit}
       />
     </div>
   );

@@ -3,92 +3,96 @@ import { SupervisorProfileModal } from "@/components/modals/SupervisorProfileMod
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Search, SlidersHorizontal } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { RefreshCw, Search, SlidersHorizontal, Send } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/lib/auth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SupervisorRecommendations() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [selectedSupervisor, setSelectedSupervisor] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("match");
+  const [projectKeywords, setProjectKeywords] = useState("");
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestMessage, setRequestMessage] = useState("");
+  const [selectedForRequest, setSelectedForRequest] = useState<any>(null);
 
-  const supervisors = [
-    {
-      name: "Dr. Sarah Ahmed",
-      department: "Computer Science",
-      expertise: ["Machine Learning", "AI", "Data Science", "Neural Networks", "Deep Learning"],
-      matchScore: 95,
-      successRate: 92,
-      projectsSupervised: 24,
-      publications: 45,
-      researchAreas: ["Computer Vision", "NLP", "Reinforcement Learning"],
-      pastProjects: [
-        "Real-time Object Detection using YOLO",
-        "Sentiment Analysis for Urdu Language",
-        "Predictive Analytics for Healthcare",
-      ],
+  const { data: recommendations, isLoading, refetch } = useQuery({
+    queryKey: ["/api/recommendations", { keywords: projectKeywords }],
+    enabled: !!projectKeywords,
+    queryFn: async () => {
+      const response = await fetch(`/api/recommendations?projectKeywords=${encodeURIComponent(projectKeywords)}`);
+      if (!response.ok) throw new Error("Failed to fetch recommendations");
+      return response.json();
     },
-    {
-      name: "Dr. Muhammad Khan",
-      department: "Software Engineering",
-      expertise: ["Web Development", "Cloud Computing", "DevOps", "Microservices"],
-      matchScore: 88,
-      successRate: 87,
-      projectsSupervised: 18,
-      publications: 32,
-      researchAreas: ["Distributed Systems", "Cloud Architecture", "Container Orchestration"],
-      pastProjects: [
-        "Scalable E-commerce Platform",
-        "CI/CD Pipeline Automation",
-        "Serverless Application Framework",
-      ],
-    },
-    {
-      name: "Dr. Fatima Tariq",
-      department: "Data Science",
-      expertise: ["Big Data", "Data Mining", "Statistical Analysis", "Python"],
-      matchScore: 85,
-      successRate: 90,
-      projectsSupervised: 21,
-      publications: 38,
-      researchAreas: ["Big Data Analytics", "Data Visualization", "Business Intelligence"],
-      pastProjects: [
-        "Sales Forecasting with Time Series",
-        "Customer Segmentation Analysis",
-        "Real-time Data Pipeline",
-      ],
-    },
-    {
-      name: "Dr. Ali Hassan",
-      department: "Cybersecurity",
-      expertise: ["Network Security", "Cryptography", "Ethical Hacking", "Blockchain"],
-      matchScore: 82,
-      successRate: 89,
-      projectsSupervised: 16,
-      publications: 28,
-      researchAreas: ["Security Protocols", "Blockchain Security", "Penetration Testing"],
-      pastProjects: [
-        "Blockchain-based Voting System",
-        "Intrusion Detection System",
-        "Secure Communication Protocol",
-      ],
-    },
-  ];
+  });
 
-  const filteredSupervisors = supervisors
-    .filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                  s.expertise.some(e => e.toLowerCase().includes(searchTerm.toLowerCase())))
-    .sort((a, b) => {
-      if (sortBy === "match") return b.matchScore - a.matchScore;
-      if (sortBy === "success") return b.successRate - a.successRate;
+  const { data: facultyProfiles, isLoading: loadingFaculty } = useQuery({
+    queryKey: ["/api/faculty-profiles"],
+  });
+
+  const sendRequestMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("/api/supervisor-requests", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Request Sent",
+        description: `Your supervision request has been sent successfully`,
+      });
+      setShowRequestModal(false);
+      setRequestMessage("");
+      setSelectedForRequest(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/supervisor-requests"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send request",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const displayProfiles = recommendations || facultyProfiles || [];
+
+  const filteredSupervisors = displayProfiles
+    .filter((profile: any) =>
+      profile.user?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      profile.expertise?.some((e: string) => e.toLowerCase().includes(searchTerm.toLowerCase()))
+    )
+    .sort((a: any, b: any) => {
+      if (sortBy === "match") return (b.matchScore || 50) - (a.matchScore || 50);
+      if (sortBy === "success") return (b.successRate || 0) - (a.successRate || 0);
       return 0;
     });
 
-  const handleSendRequest = (name: string) => {
-    toast({
-      title: "Request Sent",
-      description: `Your supervision request has been sent to ${name}`,
+  const handleSendRequest = (profile: any) => {
+    setSelectedForRequest(profile);
+    setShowRequestModal(true);
+  };
+
+  const submitRequest = () => {
+    if (!selectedForRequest || !user) return;
+
+    sendRequestMutation.mutate({
+      studentId: user.id,
+      facultyId: selectedForRequest.userId,
+      projectId: "temp-project-id",
+      status: "pending",
+      message: requestMessage,
+      matchScore: selectedForRequest.matchScore || 0,
     });
   };
 
@@ -110,6 +114,13 @@ export default function SupervisorRecommendations() {
             data-testid="input-search-supervisors"
           />
         </div>
+        <Input
+          placeholder="Enter project keywords (comma-separated)"
+          value={projectKeywords}
+          onChange={(e) => setProjectKeywords(e.target.value)}
+          className="flex-1"
+          data-testid="input-project-keywords"
+        />
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-full sm:w-48" data-testid="select-sort">
             <SelectValue placeholder="Sort by..." />
@@ -119,33 +130,89 @@ export default function SupervisorRecommendations() {
             <SelectItem value="success">Success Rate</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant="outline" data-testid="button-filters">
-          <SlidersHorizontal className="h-4 w-4 mr-2" />
-          Filters
-        </Button>
-        <Button variant="outline" data-testid="button-refresh">
-          <RefreshCw className="h-4 w-4" />
+        <Button variant="outline" onClick={() => refetch()} data-testid="button-refresh">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
         </Button>
       </div>
 
-      <div className="space-y-4">
-        {filteredSupervisors.map((supervisor) => (
-          <SupervisorRecommendationCard
-            key={supervisor.name}
-            {...supervisor}
-            onSendRequest={() => handleSendRequest(supervisor.name)}
-            onViewProfile={() => setSelectedSupervisor(supervisor)}
-          />
-        ))}
-      </div>
-
-      {selectedSupervisor && (
-        <SupervisorProfileModal
-          open={!!selectedSupervisor}
-          onClose={() => setSelectedSupervisor(null)}
-          supervisor={selectedSupervisor}
-        />
+      {isLoading || loadingFaculty ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-64" />
+          ))}
+        </div>
+      ) : filteredSupervisors.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredSupervisors.map((profile: any) => (
+            <SupervisorRecommendationCard
+              key={profile.id}
+              name={profile.user?.fullName || "Unknown"}
+              department={profile.user?.department || "N/A"}
+              expertise={profile.expertise || []}
+              matchScore={profile.matchScore || 50}
+              successRate={profile.successRate || 0}
+              projectsSupervised={profile.currentStudents || 0}
+              onViewProfile={() => setSelectedSupervisor(profile)}
+              onSendRequest={() => handleSendRequest(profile)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">
+            {projectKeywords
+              ? "No matching supervisors found. Try different keywords."
+              : "Enter project keywords to get AI-powered recommendations."}
+          </p>
+        </div>
       )}
+
+      <SupervisorProfileModal
+        open={!!selectedSupervisor}
+        onClose={() => setSelectedSupervisor(null)}
+        supervisor={selectedSupervisor}
+        onSendRequest={() => {
+          handleSendRequest(selectedSupervisor);
+          setSelectedSupervisor(null);
+        }}
+      />
+
+      <Dialog open={showRequestModal} onOpenChange={setShowRequestModal}>
+        <DialogContent data-testid="modal-send-request">
+          <DialogHeader>
+            <DialogTitle>Send Supervisor Request</DialogTitle>
+            <DialogDescription>
+              Send a supervision request to {selectedForRequest?.user?.fullName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="message">Message (Optional)</Label>
+              <Textarea
+                id="message"
+                data-testid="input-request-message"
+                placeholder="Explain why you'd like this supervisor..."
+                value={requestMessage}
+                onChange={(e) => setRequestMessage(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRequestModal(false)} data-testid="button-cancel">
+              Cancel
+            </Button>
+            <Button
+              onClick={submitRequest}
+              disabled={sendRequestMutation.isPending}
+              data-testid="button-send-request"
+            >
+              {sendRequestMutation.isPending ? "Sending..." : "Send Request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

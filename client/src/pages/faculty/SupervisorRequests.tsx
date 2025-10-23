@@ -2,6 +2,10 @@ import { RequestCard } from "@/components/RequestCard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/lib/auth";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -16,57 +20,42 @@ import { Label } from "@/components/ui/label";
 
 export default function SupervisorRequests() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [filter, setFilter] = useState("pending");
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
 
-  const [requests, setRequests] = useState<Array<{
-    id: string;
-    studentName: string;
-    studentId: string;
-    projectTitle: string;
-    projectDescription: string;
-    requestDate: string;
-    status: "pending" | "approved" | "rejected";
-  }>>([
-    {
-      id: "1",
-      studentName: "Ahmed Ali",
-      studentId: "22I-1234",
-      projectTitle: "Smart Campus Navigation System",
-      projectDescription: "An AR-based indoor navigation system using computer vision and sensor fusion to guide students across campus facilities.",
-      requestDate: "Oct 20, 2025",
-      status: "pending",
+  const { data: requests, isLoading } = useQuery({
+    queryKey: ["/api/supervisor-requests", { facultyId: user?.id }],
+    enabled: !!user,
+    queryFn: async () => {
+      const response = await fetch(`/api/supervisor-requests?facultyId=${user?.id}`);
+      if (!response.ok) throw new Error("Failed to fetch requests");
+      return response.json();
     },
-    {
-      id: "2",
-      studentName: "Sara Khan",
-      studentId: "22I-5678",
-      projectTitle: "E-Learning Analytics Platform",
-      projectDescription: "A comprehensive analytics dashboard for tracking student engagement and performance in online learning environments.",
-      requestDate: "Oct 18, 2025",
-      status: "pending",
-    },
-    {
-      id: "3",
-      studentName: "Hassan Mahmood",
-      studentId: "22I-9012",
-      projectTitle: "IoT-based Smart Agriculture",
-      projectDescription: "An IoT system for monitoring soil conditions, weather patterns, and automating irrigation for optimal crop yield.",
-      requestDate: "Oct 16, 2025",
-      status: "approved",
-    },
-  ]);
+  });
 
-  const filteredRequests = requests.filter(r => 
+  const updateRequestMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const response = await apiRequest(`/api/supervisor-requests/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/supervisor-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+    },
+  });
+
+  const filteredRequests = requests?.filter((r: any) => 
     filter === "all" || r.status === filter
-  );
+  ) || [];
 
   const handleApprove = (id: string) => {
-    setRequests(requests.map(r => 
-      r.id === id ? { ...r, status: "approved" } : r
-    ));
+    updateRequestMutation.mutate({ id, status: "accepted" });
     toast({
       title: "Request Approved",
       description: "You are now supervising this project",
@@ -75,9 +64,7 @@ export default function SupervisorRequests() {
 
   const handleReject = () => {
     if (selectedRequest) {
-      setRequests(requests.map(r => 
-        r.id === selectedRequest.id ? { ...r, status: "rejected" } : r
-      ));
+      updateRequestMutation.mutate({ id: selectedRequest.id, status: "rejected" });
       toast({
         title: "Request Rejected",
         description: "Rejection notification sent to student",
@@ -102,28 +89,45 @@ export default function SupervisorRequests() {
         <SelectContent>
           <SelectItem value="all">All Requests</SelectItem>
           <SelectItem value="pending">Pending</SelectItem>
-          <SelectItem value="approved">Approved</SelectItem>
+          <SelectItem value="accepted">Approved</SelectItem>
           <SelectItem value="rejected">Rejected</SelectItem>
         </SelectContent>
       </Select>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredRequests.map((request) => (
-          <RequestCard
-            key={request.id}
-            {...request}
-            onApprove={() => handleApprove(request.id)}
-            onReject={() => {
-              setSelectedRequest(request);
-              setShowRejectModal(true);
-            }}
-            onViewDetails={() => setSelectedRequest(request)}
-          />
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-48" />
+          ))}
+        </div>
+      ) : filteredRequests.length > 0 ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredRequests.map((request: any) => (
+            <RequestCard
+              key={request.id}
+              studentName={request.student?.fullName || "Unknown"}
+              studentId={request.student?.rollNumber || "N/A"}
+              projectTitle={request.project?.title || "Unknown Project"}
+              projectDescription={request.project?.description || "No description"}
+              requestDate={new Date(request.createdAt).toLocaleDateString()}
+              status={request.status}
+              onApprove={() => handleApprove(request.id)}
+              onReject={() => {
+                setSelectedRequest(request);
+                setShowRejectModal(true);
+              }}
+              onViewDetails={() => setSelectedRequest(request)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12 text-muted-foreground">
+          <p>No {filter !== "all" ? filter : ""} requests found</p>
+        </div>
+      )}
 
       <Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
-        <DialogContent>
+        <DialogContent data-testid="modal-reject-request">
           <DialogHeader>
             <DialogTitle>Reject Supervision Request</DialogTitle>
             <DialogDescription>Please provide a reason for rejection</DialogDescription>
@@ -141,8 +145,10 @@ export default function SupervisorRequests() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejectModal(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleReject} disabled={!rejectReason}>
+            <Button variant="outline" onClick={() => setShowRejectModal(false)} data-testid="button-cancel">
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleReject} disabled={!rejectReason} data-testid="button-confirm-reject">
               Reject Request
             </Button>
           </DialogFooter>
