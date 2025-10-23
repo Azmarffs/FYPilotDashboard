@@ -2,8 +2,10 @@ import { StatCard } from "@/components/StatCard";
 import { AnalyticsChart } from "@/components/AnalyticsChart";
 import { Button } from "@/components/ui/button";
 import { FileText, Clock, CheckCircle, Users, PanelTop, BarChart3 } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function CommitteeDashboard() {
+  const [, setLocation] = useLocation();
   const projectData = [
     { name: "Jan", submitted: 12, approved: 10, rejected: 2 },
     { name: "Feb", submitted: 15, approved: 13, rejected: 2 },
@@ -36,14 +38,23 @@ export default function CommitteeDashboard() {
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold">Quick Actions</h2>
           <div className="grid gap-4">
-            <Button className="w-full justify-start h-auto p-4" data-testid="button-generate-panels">
+            <Button 
+              className="w-full justify-start h-auto p-4" 
+              data-testid="button-generate-panels"
+              onClick={() => setLocation("/panel-generation")}
+            >
               <PanelTop className="h-5 w-5 mr-3" />
               <div className="text-left">
                 <div className="font-semibold">Generate Evaluation Panels</div>
                 <div className="text-sm text-primary-foreground/80">AI-powered optimal panel assignment</div>
               </div>
             </Button>
-            <Button variant="outline" className="w-full justify-start h-auto p-4" data-testid="button-view-analytics">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start h-auto p-4" 
+              data-testid="button-view-analytics"
+              onClick={() => setLocation("/analytics")}
+            >
               <BarChart3 className="h-5 w-5 mr-3" />
               <div className="text-left">
                 <div className="font-semibold">View Detailed Analytics</div>

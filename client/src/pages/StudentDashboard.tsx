@@ -2,8 +2,11 @@ import { StatCard } from "@/components/StatCard";
 import { ProjectCard } from "@/components/ProjectCard";
 import { Button } from "@/components/ui/button";
 import { FileText, Clock, CheckCircle, Users, Lightbulb, Upload } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function StudentDashboard() {
+  const [, setLocation] = useLocation();
+
   return (
     <div className="space-y-8">
       <div>
@@ -24,14 +27,23 @@ export default function StudentDashboard() {
             <h2 className="text-2xl font-semibold">Quick Actions</h2>
           </div>
           <div className="grid gap-4">
-            <Button className="w-full justify-start h-auto p-4" data-testid="button-get-recommendations">
+            <Button 
+              className="w-full justify-start h-auto p-4" 
+              data-testid="button-get-recommendations"
+              onClick={() => setLocation("/recommendations")}
+            >
               <Lightbulb className="h-5 w-5 mr-3" />
               <div className="text-left">
                 <div className="font-semibold">Get Supervisor Recommendations</div>
                 <div className="text-sm text-primary-foreground/80">Find the perfect match for your project</div>
               </div>
             </Button>
-            <Button variant="outline" className="w-full justify-start h-auto p-4" data-testid="button-submit-project">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start h-auto p-4" 
+              data-testid="button-submit-project"
+              onClick={() => setLocation("/submit")}
+            >
               <Upload className="h-5 w-5 mr-3" />
               <div className="text-left">
                 <div className="font-semibold">Submit New Project</div>

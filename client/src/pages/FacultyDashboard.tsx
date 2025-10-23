@@ -2,8 +2,33 @@ import { StatCard } from "@/components/StatCard";
 import { RequestCard } from "@/components/RequestCard";
 import { PanelCard } from "@/components/PanelCard";
 import { Users, Clock, CheckCircle, Calendar } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function FacultyDashboard() {
+  const { toast } = useToast();
+
+  const handleApprove = (studentName: string) => {
+    toast({
+      title: "Request Approved",
+      description: `You have approved ${studentName}'s supervision request`,
+    });
+  };
+
+  const handleReject = (studentName: string) => {
+    toast({
+      title: "Request Rejected",
+      description: `You have rejected ${studentName}'s supervision request`,
+      variant: "destructive",
+    });
+  };
+
+  const handleViewDetails = (title: string) => {
+    toast({
+      title: "View Details",
+      description: `Viewing details for "${title}"`,
+    });
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -27,9 +52,9 @@ export default function FacultyDashboard() {
             projectTitle="Smart Campus Navigation System"
             projectDescription="An AR-based indoor navigation system using computer vision and sensor fusion."
             requestDate="Oct 20, 2025"
-            onApprove={() => console.log("Approved")}
-            onReject={() => console.log("Rejected")}
-            onViewDetails={() => console.log("View details")}
+            onApprove={() => handleApprove("Ahmed Ali")}
+            onReject={() => handleReject("Ahmed Ali")}
+            onViewDetails={() => handleViewDetails("Smart Campus Navigation System")}
           />
           <RequestCard
             studentName="Sara Khan"
@@ -37,9 +62,9 @@ export default function FacultyDashboard() {
             projectTitle="E-Learning Analytics Platform"
             projectDescription="A comprehensive analytics dashboard for tracking student engagement."
             requestDate="Oct 18, 2025"
-            onApprove={() => console.log("Approved")}
-            onReject={() => console.log("Rejected")}
-            onViewDetails={() => console.log("View details")}
+            onApprove={() => handleApprove("Sara Khan")}
+            onReject={() => handleReject("Sara Khan")}
+            onViewDetails={() => handleViewDetails("E-Learning Analytics Platform")}
           />
         </div>
       </div>
@@ -59,7 +84,7 @@ export default function FacultyDashboard() {
               { name: "Dr. Muhammad Khan", role: "Examiner" },
               { name: "Dr. Ali Hassan", role: "External" },
             ]}
-            onViewDetails={() => console.log("View panel details")}
+            onViewDetails={() => handleViewDetails("AI-Powered Student Predictor")}
           />
         </div>
       </div>

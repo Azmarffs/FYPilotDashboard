@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Plus } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,7 @@ import { Label } from "@/components/ui/label";
 
 export default function MyProjects() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedProject, setSelectedProject] = useState<any>(null);
@@ -68,7 +70,10 @@ export default function MyProjects() {
           <h1 className="text-4xl font-bold mb-2">My Projects</h1>
           <p className="text-muted-foreground">Manage and track your FYP submissions</p>
         </div>
-        <Button data-testid="button-new-project">
+        <Button 
+          data-testid="button-new-project"
+          onClick={() => setLocation("/submit")}
+        >
           <Plus className="h-4 w-4 mr-2" />
           New Project
         </Button>
