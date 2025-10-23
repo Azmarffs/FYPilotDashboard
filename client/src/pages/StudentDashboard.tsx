@@ -3,9 +3,29 @@ import { ProjectCard } from "@/components/ProjectCard";
 import { Button } from "@/components/ui/button";
 import { FileText, Clock, CheckCircle, Users, Lightbulb, Upload } from "lucide-react";
 import { useLocation } from "wouter";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 export default function StudentDashboard() {
   const [, setLocation] = useLocation();
+  const [showProjectModal, setShowProjectModal] = useState(false);
+
+  const project = {
+    title: "AI-Powered Student Performance Predictor",
+    description: "A machine learning system that analyzes student data to predict academic performance.",
+    status: "approved" as const,
+    supervisor: "Dr. Sarah Ahmed",
+    teamMembers: ["John Doe", "Jane Smith", "Ali Hassan"],
+    submittedDate: "Oct 15, 2025",
+  };
 
   return (
     <div className="space-y-8">
@@ -56,17 +76,46 @@ export default function StudentDashboard() {
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold">My Projects</h2>
           <ProjectCard
-            title="AI-Powered Student Performance Predictor"
-            description="A machine learning system that analyzes student data to predict academic performance."
-            status="approved"
-            supervisor="Dr. Sarah Ahmed"
-            teamMembers={["John Doe", "Jane Smith", "Ali Hassan"]}
-            submittedDate="Oct 15, 2025"
-            onView={() => console.log("View project")}
-            onEdit={() => console.log("Edit project")}
+            {...project}
+            onView={() => setShowProjectModal(true)}
+            onEdit={() => setLocation("/projects")}
           />
         </div>
       </div>
+
+      <Dialog open={showProjectModal} onOpenChange={setShowProjectModal}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{project.title}</DialogTitle>
+            <DialogDescription>Project Details</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="font-semibold">Description</Label>
+              <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
+            </div>
+            <div>
+              <Label className="font-semibold">Supervisor</Label>
+              <p className="text-sm text-muted-foreground mt-1">{project.supervisor}</p>
+            </div>
+            <div>
+              <Label className="font-semibold">Team Members</Label>
+              <p className="text-sm text-muted-foreground mt-1">{project.teamMembers.join(", ")}</p>
+            </div>
+            <div>
+              <Label className="font-semibold">Status</Label>
+              <p className="text-sm text-muted-foreground mt-1 capitalize">{project.status}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowProjectModal(false)}>Close</Button>
+            <Button onClick={() => {
+              setShowProjectModal(false);
+              setLocation("/projects");
+            }}>View All Projects</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

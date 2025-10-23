@@ -3,9 +3,39 @@ import { RequestCard } from "@/components/RequestCard";
 import { PanelCard } from "@/components/PanelCard";
 import { Users, Clock, CheckCircle, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 export default function FacultyDashboard() {
   const { toast } = useToast();
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<any>(null);
+
+  const requests = [
+    {
+      studentName: "Ahmed Ali",
+      studentId: "22I-1234",
+      projectTitle: "Smart Campus Navigation System",
+      projectDescription: "An AR-based indoor navigation system using computer vision and sensor fusion.",
+      requestDate: "Oct 20, 2025",
+    },
+    {
+      studentName: "Sara Khan",
+      studentId: "22I-5678",
+      projectTitle: "E-Learning Analytics Platform",
+      projectDescription: "A comprehensive analytics dashboard for tracking student engagement.",
+      requestDate: "Oct 18, 2025",
+    },
+  ];
 
   const handleApprove = (studentName: string) => {
     toast({
@@ -22,11 +52,9 @@ export default function FacultyDashboard() {
     });
   };
 
-  const handleViewDetails = (title: string) => {
-    toast({
-      title: "View Details",
-      description: `Viewing details for "${title}"`,
-    });
+  const handleViewDetails = (project: any) => {
+    setSelectedProject(project);
+    setShowDetailsModal(true);
   };
 
   return (
@@ -47,24 +75,16 @@ export default function FacultyDashboard() {
         <h2 className="text-2xl font-semibold">Pending Supervision Requests</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <RequestCard
-            studentName="Ahmed Ali"
-            studentId="22I-1234"
-            projectTitle="Smart Campus Navigation System"
-            projectDescription="An AR-based indoor navigation system using computer vision and sensor fusion."
-            requestDate="Oct 20, 2025"
+            {...requests[0]}
             onApprove={() => handleApprove("Ahmed Ali")}
             onReject={() => handleReject("Ahmed Ali")}
-            onViewDetails={() => handleViewDetails("Smart Campus Navigation System")}
+            onViewDetails={() => handleViewDetails(requests[0])}
           />
           <RequestCard
-            studentName="Sara Khan"
-            studentId="22I-5678"
-            projectTitle="E-Learning Analytics Platform"
-            projectDescription="A comprehensive analytics dashboard for tracking student engagement."
-            requestDate="Oct 18, 2025"
+            {...requests[1]}
             onApprove={() => handleApprove("Sara Khan")}
             onReject={() => handleReject("Sara Khan")}
-            onViewDetails={() => handleViewDetails("E-Learning Analytics Platform")}
+            onViewDetails={() => handleViewDetails(requests[1])}
           />
         </div>
       </div>
@@ -84,10 +104,64 @@ export default function FacultyDashboard() {
               { name: "Dr. Muhammad Khan", role: "Examiner" },
               { name: "Dr. Ali Hassan", role: "External" },
             ]}
-            onViewDetails={() => handleViewDetails("AI-Powered Student Predictor")}
+            onViewDetails={() => handleViewDetails({ 
+              projectTitle: "AI-Powered Student Predictor", 
+              studentName: "John Doe",
+              projectDescription: "A machine learning system that analyzes student data to predict academic performance and identify at-risk students early.",
+              date: "Nov 15, 2025",
+              time: "10:00 AM",
+              location: "Room 401, CS Building"
+            })}
           />
         </div>
       </div>
+
+      <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{selectedProject?.projectTitle}</DialogTitle>
+            <DialogDescription>Project Details</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedProject?.studentName && (
+              <div>
+                <Label className="font-semibold">Student</Label>
+                <p className="text-sm text-muted-foreground mt-1">{selectedProject.studentName}</p>
+              </div>
+            )}
+            {selectedProject?.studentId && (
+              <div>
+                <Label className="font-semibold">Student ID</Label>
+                <p className="text-sm text-muted-foreground mt-1">{selectedProject.studentId}</p>
+              </div>
+            )}
+            {selectedProject?.projectDescription && (
+              <div>
+                <Label className="font-semibold">Description</Label>
+                <p className="text-sm text-muted-foreground mt-1">{selectedProject.projectDescription}</p>
+              </div>
+            )}
+            {selectedProject?.requestDate && (
+              <div>
+                <Label className="font-semibold">Request Date</Label>
+                <p className="text-sm text-muted-foreground mt-1">{selectedProject.requestDate}</p>
+              </div>
+            )}
+            {selectedProject?.date && (
+              <div>
+                <Label className="font-semibold">Defense Schedule</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {selectedProject.date} at {selectedProject.time}
+                  {selectedProject.location && ` - ${selectedProject.location}`}
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDetailsModal(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
