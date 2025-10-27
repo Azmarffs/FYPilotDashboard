@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -10,6 +11,12 @@ declare module 'http' {
     rawBody: unknown
   }
 }
+
+// Enable CORS for all routes
+app.use(cors({
+  origin: process.env.NODE_ENV === 'development' ? 'http://localhost:5000' : true,
+  credentials: true,
+}));
 
 app.use(express.json({
   verify: (req, _res, buf) => {
@@ -84,11 +91,16 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  
+  // Try to start the server with different configurations for Windows compatibility
+  try {
+    server.listen(port, 'localhost', () => {
+      log(`serving on port ${port}`);
+    });
+  } catch (error) {
+    // Fallback: try without host specification
+    server.listen(port, () => {
+      log(`serving on port ${port}`);
+    });
+  }
 })();
